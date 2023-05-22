@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 from PIL import Image, ImageTk
 import tkinter as tk
 from pathlib import Path
@@ -13,13 +15,25 @@ from termcolor import colored
 import colorama
 
 from project_team_10.notes import CLINotes
+
 colorama.init()
 
 dir_path = os.path.dirname(__file__)
 
 
+class Output(ABC):
+    @abstractmethod
+    def print(self):
+        pass
+
 class Logo_Image:
-    def __init__(self, title="Volkan", geometry="300x400", image="Volkan.png", button_img="button.png"):
+    def __init__(
+        self,
+        title="Volkan",
+        geometry="300x400",
+        image="Volkan.png",
+        button_img="button.png",
+    ):
         self.window = tk.Tk()
         self.window.title(title)
         self.window.geometry(geometry)
@@ -31,17 +45,15 @@ class Logo_Image:
 
         self.resized_image = self.img.resize((300, 400), Image.ANTIALIAS)
         self.bgImage = ImageTk.PhotoImage(self.resized_image)
-        self.bg = self.canvas.create_image(
-            0, 0, image=self.bgImage, anchor=tk.NW)
+        self.bg = self.canvas.create_image(0, 0, image=self.bgImage, anchor=tk.NW)
 
-        self.img1 = Image.open(os.path.join(dir_path,button_img))
+        self.img1 = Image.open(os.path.join(dir_path, button_img))
         self.resized_button = self.img1.resize((100, 30), Image.ANTIALIAS)
         self.bgBtn = ImageTk.PhotoImage(self.resized_button)
 
         self.button = self.canvas.create_image(150, 365, image=self.bgBtn)
         self.command = lambda: self.click_button_event()
-        self.canvas.tag_bind(self.button, "<Button-1>",
-                             self.click_button_event)
+        self.canvas.tag_bind(self.button, "<Button-1>", self.click_button_event)
 
     def run(self):
         self.window.mainloop()
@@ -55,8 +67,7 @@ ADRESSBOOK = "book.bin"
 TELEPHONE = r"[+]380[(][0-9]{2}[)][0-9]{3}[-][0-9]{2}[-][0-9]{2} | [+]380[(][0-9]{2}[)][0-9]{3}[-][0-9]{1}[-][0-9]{3}"
 
 
-class AddressBook(UserDict):
-
+class AddressBook(UserDict, Output):
     def __getstate__(self):
         attributes = self.__dict__.copy()
         return attributes
@@ -77,7 +88,7 @@ class AddressBook(UserDict):
         recorded = 0
         output = []
         for record in self.data:
-            if (recorded < n):
+            if recorded < n:
                 output.append(self.data[record])
                 recorded += 1
             else:  # recorded == n
@@ -102,9 +113,11 @@ class AddressBook(UserDict):
     def remove(self, name):
         self.data.pop(name)
 
-contact_book = AddressBook() 
-class Record:  # responsible for the record manipulation
 
+contact_book = AddressBook()
+
+
+class Record(Output):  # responsible for the record manipulation
     def __init__(self, name):
         self.name = name  # type of Name
         self.phone = []  # list of phones
@@ -120,16 +133,18 @@ class Record:  # responsible for the record manipulation
         result = self.birthday.day
         if result != "":
             inputdate = result.split("/")
-            birthday = date(year=int(inputdate[0]), month=int(
-                inputdate[1]), day=int(inputdate[2]))
-            thisbirthday = date(
-                year=today.year, month=birthday.month, day=birthday.day)
+            birthday = date(
+                year=int(inputdate[0]), month=int(inputdate[1]), day=int(inputdate[2])
+            )
+            thisbirthday = date(year=today.year, month=birthday.month, day=birthday.day)
             if today.month > birthday.month:  # birthday has passed
-                nextbirthday = date(year=today.year + 1,
-                                    month=birthday.month, day=birthday.day)
+                nextbirthday = date(
+                    year=today.year + 1, month=birthday.month, day=birthday.day
+                )
             else:  # still will be
                 nextbirthday = date(
-                    year=today.year, month=birthday.month, day=birthday.day)
+                    year=today.year, month=birthday.month, day=birthday.day
+                )
             delta = nextbirthday - today
             return delta.days
         else:
@@ -137,7 +152,7 @@ class Record:  # responsible for the record manipulation
 
     def add_phone(self, phone):
         self.phone.append(phone)
-        return (f"add phone: {phone.value} for {self.name.value}")
+        return f"add phone: {phone.value} for {self.name.value}"
 
     def find_phone(self, phone):
         for ph in self.phone:
@@ -161,7 +176,7 @@ class Record:  # responsible for the record manipulation
 
     def add_email(self, email):
         self.email.append(email)
-        return (f"add email: {email.value}")
+        return f"add email: {email.value}"
 
     def remove_email(self, stremail):
         try:
@@ -240,8 +255,11 @@ class Record:  # responsible for the record manipulation
         for i in range(m):
             output = self.create_output_line(i)
             # print(output)
-            print(" {:^20} | {:^20}| {:^20} | {:^20} | {:^20} ".format(
-                output[0], output[1], output[2], output[3], output[4]))
+            print(
+                " {:^20} | {:^20}| {:^20} | {:^20} | {:^20} ".format(
+                    output[0], output[1], output[2], output[3], output[4]
+                )
+            )
 
     def edit_birthday(self, new):
         self.birthday.update(new)
@@ -264,14 +282,16 @@ class Phone(Field):  # nonmandatory field
     def __init__(self, phone=NOT_DEFINED):
         self.__value = phone
 
-    @ property  # define getter
+    @property  # define getter
     def value(self):
         return self.__value
 
-    @ value.setter  # define setter
+    @value.setter  # define setter
     def value(self, val):
         match = re.fullmatch(
-            r"[+]?[1-9]{1,2}(\([1-9]{3}\)|[1-9]{3})[1-9]{3}[-]?[0-9]{2}[-]?[0-9]{2}", val)
+            r"[+]?[1-9]{1,2}(\([1-9]{3}\)|[1-9]{3})[1-9]{3}[-]?[0-9]{2}[-]?[0-9]{2}",
+            val,
+        )
         if not match:
             raise ValueError(">> Phone number is not  correct.\n")
         else:
@@ -282,14 +302,13 @@ class Email(Field):  # nonmandatory field
     def __init__(self, email=NOT_DEFINED):
         self.__value = email
 
-    @ property  # getter
+    @property  # getter
     def value(self):
         return self.__value
 
-    @ value.setter  # setter
+    @value.setter  # setter
     def value(self, val):
-        match = re.fullmatch(
-            r"[a-zA-Z\.\-_0-9]+@[a-zA-Z0-9]+[\.][a-zA-Z]{2}", val)
+        match = re.fullmatch(r"[a-zA-Z\.\-_0-9]+@[a-zA-Z0-9]+[\.][a-zA-Z]{2}", val)
         if not match:
             raise ValueError(">> Email name is not correct. \n")
         else:
@@ -301,11 +320,11 @@ class Birthday:
     def __init__(self):
         self.__birthday = ""
 
-    @ property  # define getter
+    @property  # define getter
     def day(self):
         return self.__birthday
 
-    @ day.setter  # define setter
+    @day.setter  # define setter
     def day(self, val):
         match = re.fullmatch(r"^[1-9][0-9]{3}\/[0-9]{2}\/[0-9]{2}", val)
         if not match:
@@ -362,16 +381,27 @@ PHONE_CMD = "phone"
 SHOW_CMD = "show all"
 HLP_CMD = "help"
 SRCH_CMD = "search"
-SORT_CMD = 'sort'
+SORT_CMD = "sort"
 EDT_CMD = "edit"
 RMV_CMD = "remove"
 EMAIL_CMD = "email"
 CONGRAT_CMD = "birthday"
 NOTES_CMD = "notes"
 
-COMMANDS = [HELLO_CMD, ADD_CMD, CHANGE_CMD,
-            PHONE_CMD, SHOW_CMD, HLP_CMD, SRCH_CMD,
-            EDT_CMD, RMV_CMD, EMAIL_CMD, CONGRAT_CMD, NOTES_CMD]
+COMMANDS = [
+    HELLO_CMD,
+    ADD_CMD,
+    CHANGE_CMD,
+    PHONE_CMD,
+    SHOW_CMD,
+    HLP_CMD,
+    SRCH_CMD,
+    EDT_CMD,
+    RMV_CMD,
+    EMAIL_CMD,
+    CONGRAT_CMD,
+    NOTES_CMD,
+]
 
 
 def parser(line):
@@ -408,12 +438,17 @@ def check_name(name):
 
 def check_phone(phone):
     match = re.fullmatch(
-        r"[+]?[1-9]{1,2}(\([1-9]{3}\)|[1-9]{3})[1-9]{3}[-]?[0-9]{2}[-]?[0-9]{2}", phone)
+        r"[+]?[1-9]{1,2}(\([1-9]{3}\)|[1-9]{3})[1-9]{3}[-]?[0-9]{2}[-]?[0-9]{2}", phone
+    )
     while not match:
-        print(">> Please input correct phone. Typically it is +1(647)861-9006 or similar")
+        print(
+            ">> Please input correct phone. Typically it is +1(647)861-9006 or similar"
+        )
         phone = input(">> ").lower()
         match = re.fullmatch(
-            r"[+]?[1-9]{1,2}(\([1-9]{3}\)|[1-9]{3})[1-9]{3}[-]?[0-9]{2}[-]?[0-9]{2}", phone)
+            r"[+]?[1-9]{1,2}(\([1-9]{3}\)|[1-9]{3})[1-9]{3}[-]?[0-9]{2}[-]?[0-9]{2}",
+            phone,
+        )
     return phone
 
 
@@ -433,7 +468,10 @@ def add_process(words):
         print(">> " + "It is all right. Will add " + name + " " + phone)
         wait()
     else:  # all arguments were missing only add
-        print(">> " + "Found command add in your request. Will need a name and a phone of the contact")
+        print(
+            ">> "
+            + "Found command add in your request. Will need a name and a phone of the contact"
+        )
         name = check_name("-1")  # check the name
         print(">> " + "Need phone info for " + name)
         phone = check_phone("-1")  # check the phone
@@ -456,7 +494,10 @@ def change_process(words):
         print(">> " + "It is all right. Will change " + name + " " + phone)
         wait()
     else:  # all arguments were missing only add
-        print(">> " + "Found command change in your request. Will need name and a new phone of the contact")
+        print(
+            ">> "
+            + "Found command change in your request. Will need name and a new phone of the contact"
+        )
         name = check_name("-1")  # check the name
         print(">> " + "Need phone info for " + name)
         phone = check_phone("-1")  # check the phone
@@ -470,7 +511,9 @@ def phone_process(words):
         print(">> " + "It is all right. Will chase for the phone of " + name)
         wait()
     else:  # all arguments were missing only add
-        print(">> " + "Found command phone in your request. Will need name of the contact")
+        print(
+            ">> " + "Found command phone in your request. Will need name of the contact"
+        )
         name = check_name("-1")  # check the name
     return command + " " + name
 
@@ -482,7 +525,9 @@ def email_process(words):
         print(">> " + "It is all right. Will chase for the email of " + name)
         wait()
     else:  # all arguments were missing only add
-        print(">> " + "Found command email in your request. Will need name of the contact")
+        print(
+            ">> " + "Found command email in your request. Will need name of the contact"
+        )
         name = check_name("-1")  # check the name
     return command + " " + name
 
@@ -521,23 +566,31 @@ def birthday_process(words):
     command = words[0]
     if len(words) == 2:  # all required arguments were taken
         days = check_number(words[1])  # check the name
-        print(">> " + "It is all right. Will chase for the names who will have birthday in " + days + "  days")
+        print(
+            ">> "
+            + "It is all right. Will chase for the names who will have birthday in "
+            + days
+            + "  days"
+        )
         wait()
     else:  # all arguments were missing only add
-        print(">> " + "Found command birthday in your request. Will need number of days")
+        print(
+            ">> " + "Found command birthday in your request. Will need number of days"
+        )
         days = check_number("-1")  # check the name
     return command + " " + days
 
 
-PROCESS = {ADD_CMD: add_process,
-           CHANGE_CMD: change_process,
-           PHONE_CMD: phone_process,
-           SRCH_CMD: search_process,
-           EDT_CMD: edit_process,
-           RMV_CMD: remove_process,
-           EMAIL_CMD: email_process,
-           CONGRAT_CMD: birthday_process
-           }
+PROCESS = {
+    ADD_CMD: add_process,
+    CHANGE_CMD: change_process,
+    PHONE_CMD: phone_process,
+    SRCH_CMD: search_process,
+    EDT_CMD: edit_process,
+    RMV_CMD: remove_process,
+    EMAIL_CMD: email_process,
+    CONGRAT_CMD: birthday_process,
+}
 
 
 def input_error(command_func):
@@ -550,6 +603,7 @@ def input_error(command_func):
             corrected_list.append(PROCESS[command](words))
             # 33 print(corrected_list)
         return command_func(corrected_list)
+
     return inner
 
 
@@ -561,7 +615,7 @@ def greet(list=[]):
     return GREETING
 
 
-@ input_error
+@input_error
 def add_contact(list):  # list contains lists of possible actions to add
     # print(list)
     output = ""
@@ -579,7 +633,7 @@ def add_contact(list):  # list contains lists of possible actions to add
     return "Added " + output + "into the contacts"
 
 
-@ input_error
+@input_error
 def change(list):  # list contains lists of possible actions to add
     # print(list)
     output = ""
@@ -604,7 +658,7 @@ def change(list):  # list contains lists of possible actions to add
     return "Phones were modified for: " + output
 
 
-@ input_error
+@input_error
 def phone(list):  # list contains lists of possible actions to add
     # print(list)
     for record in list:
@@ -619,7 +673,7 @@ def phone(list):  # list contains lists of possible actions to add
     return "Done"
 
 
-@ input_error
+@input_error
 def email(list):  # list contains lists of possible actions to add
     # print(list)
     for record in list:
@@ -646,43 +700,47 @@ def show(list=[]):
 
 
 def sorting(path):
-    find = re.findall(r'[a-zA-Z:\\+\-()]*$', path[0])
+    find = re.findall(r"[a-zA-Z:\\+\-()]*$", path[0])
     folder = find[0]
-    img = ('JPEG', 'PNG', 'JPG', 'SVG')
-    vid = ('AVI', 'MP4', 'MOV', 'MKV')
-    doc = ('DOC', 'DOCX', 'TXT', 'PDF', 'XLSX', 'PPTX')
-    muz = ('MP3', 'OGG', 'WAV', 'AMR')
-    arch = ('ZIP', 'GZ', 'TAR')
+    img = ("JPEG", "PNG", "JPG", "SVG")
+    vid = ("AVI", "MP4", "MOV", "MKV")
+    doc = ("DOC", "DOCX", "TXT", "PDF", "XLSX", "PPTX")
+    muz = ("MP3", "OGG", "WAV", "AMR")
+    arch = ("ZIP", "GZ", "TAR")
 
-    Path(folder + '/' + 'images').mkdir(exist_ok=False)
-    Path(folder + '/' + 'video').mkdir(exist_ok=True)
-    Path(folder + '/' + 'documents').mkdir(exist_ok=True)
-    Path(folder + '/' + 'audio').mkdir(exist_ok=True)
-    Path(folder + '/' + 'archives').mkdir(exist_ok=True)
+    Path(folder + "/" + "images").mkdir(exist_ok=False)
+    Path(folder + "/" + "video").mkdir(exist_ok=True)
+    Path(folder + "/" + "documents").mkdir(exist_ok=True)
+    Path(folder + "/" + "audio").mkdir(exist_ok=True)
+    Path(folder + "/" + "archives").mkdir(exist_ok=True)
 
-    for i in Path(folder).glob('**\*'):
-
-        if i.name == 'images' or i.name == 'video' or i.name == 'documents' or i.name == 'audio' or i.name == 'archives':
+    for i in Path(folder).glob("**\*"):
+        if (
+            i.name == "images"
+            or i.name == "video"
+            or i.name == "documents"
+            or i.name == "audio"
+            or i.name == "archives"
+        ):
             continue
         if i.is_dir():
             continue
         if i.suffix.upper()[1:] in img:
-            Path(i).rename(folder + r'\\images' + '\\' + i.name)
+            Path(i).rename(folder + r"\\images" + "\\" + i.name)
         elif i.suffix.upper()[1:] in vid:
-            Path(i).rename(folder + r'\\video' + '\\' + i.name)
+            Path(i).rename(folder + r"\\video" + "\\" + i.name)
         elif i.suffix.upper()[1:] in doc:
-            Path(i).rename(folder + r'\\documents' + '\\' + i.name)
+            Path(i).rename(folder + r"\\documents" + "\\" + i.name)
         elif i.suffix.upper()[1:] in muz:
-            Path(i).rename(folder + r'\\audio' + '\\' + i.name)
+            Path(i).rename(folder + r"\\audio" + "\\" + i.name)
         elif i.suffix.upper()[1:] in arch:
             try:
-                shutil.unpack_archive(
-                    Path(i), folder + r'\\archives' + '\\' + i.name)
+                shutil.unpack_archive(Path(i), folder + r"\\archives" + "\\" + i.name)
             except:
                 continue
 
-    for empty in Path(folder).glob('**/*'):
-        if empty.is_dir() and not list(empty.glob('*')):
+    for empty in Path(folder).glob("**/*"):
+        if empty.is_dir() and not list(empty.glob("*")):
             empty.rmdir()
 
 
@@ -702,7 +760,7 @@ def help(list=[]):
 """
 
 
-@ input_error
+@input_error
 def search(list):
     users = ""
     for record in list:
@@ -725,7 +783,7 @@ def search(list):
             return "users found: " + users
 
 
-@ input_error
+@input_error
 def edit(list):
     for record in list:
         words = record.split()
@@ -753,7 +811,6 @@ def edit(list):
             print(">> would you like to append email ?[y/n]")
             reponse = input(">> ").lower()
             if reponse == "y":
-
                 print(">> please input e-mail kind of ali-mak@gmail.ca")
                 email = input(">> ").lower()
                 try:
@@ -790,7 +847,7 @@ def edit(list):
     return "Done"
 
 
-@ input_error
+@input_error
 def remove(list):
     for record in list:
         words = record.split()
@@ -801,7 +858,8 @@ def remove(list):
         else:
             record.print()
             print(
-                ">> are are you sure that you want to remove this record completely? [y/n]")
+                ">> are are you sure that you want to remove this record completely? [y/n]"
+            )
             reponse = input(">> ").lower()
             if reponse == "y":
                 contact_book.remove(name)
@@ -809,7 +867,7 @@ def remove(list):
     return "Done"
 
 
-@ input_error
+@input_error
 def birthday(list):  # list contains lists of possible actions to add
     # print(list)
     if len(contact_book) == 0:
@@ -836,13 +894,19 @@ def start_notes(list=[]):  # list contains lists of possible actions to add
 
 
 def command_parser(line):
-    return re.findall("add[ ]+[a-zA-Z]+[ ]+[+][1-9][(][0-9]{3}[)][0-9]{3}-[0-9]{4}", line)
+    return re.findall(
+        "add[ ]+[a-zA-Z]+[ ]+[+][1-9][(][0-9]{3}[)][0-9]{3}-[0-9]{4}", line
+    )
 
 
 PARSER = {
     HELLO_CMD: lambda x: re.findall(HELLO_CMD, x),
-    ADD_CMD: lambda x: re.findall(ADD_CMD + "[ ]*[a-zA-Z0-9\+\-()]*[ ]*[a-zA-Z0-9\+\-()]*", x),
-    CHANGE_CMD: lambda x: re.findall(CHANGE_CMD + "[ ]*[a-zA-Z0-9\+\-()]*[ ]*[a-zA-Z0-9\+\-()]*", x),
+    ADD_CMD: lambda x: re.findall(
+        ADD_CMD + "[ ]*[a-zA-Z0-9\+\-()]*[ ]*[a-zA-Z0-9\+\-()]*", x
+    ),
+    CHANGE_CMD: lambda x: re.findall(
+        CHANGE_CMD + "[ ]*[a-zA-Z0-9\+\-()]*[ ]*[a-zA-Z0-9\+\-()]*", x
+    ),
     PHONE_CMD: lambda x: re.findall(PHONE_CMD + "[ ]*[a-zA-Z0-9\+\-()]*", x),
     EMAIL_CMD: lambda x: re.findall(EMAIL_CMD + "[ ]*[a-zA-Z0-9\+\-()]*", x),
     SHOW_CMD: lambda x: re.findall(SHOW_CMD + "[ ]*[a-zA-Z0-9\+\-()]*", x),
@@ -850,9 +914,8 @@ PARSER = {
     SRCH_CMD: lambda x: re.findall(SRCH_CMD + "[ ]*[a-zA-Z0-9\+\-()]*", x),
     EDT_CMD: lambda x: re.findall(EDT_CMD + "[ ]*[a-zA-Z0-9\+\-()]*", x),
     RMV_CMD: lambda x: re.findall(RMV_CMD + "[ ]*[a-zA-Z0-9\+\-()]*", x),
-    CONGRAT_CMD: lambda x: re.findall(
-        CONGRAT_CMD + "[ ]*[a-zA-Z0-9\+\-()]*", x),
-    NOTES_CMD: lambda x: re.findall(NOTES_CMD, x)
+    CONGRAT_CMD: lambda x: re.findall(CONGRAT_CMD + "[ ]*[a-zA-Z0-9\+\-()]*", x),
+    NOTES_CMD: lambda x: re.findall(NOTES_CMD, x),
 }
 
 RESPONSE = {
@@ -867,7 +930,7 @@ RESPONSE = {
     EDT_CMD: edit,
     RMV_CMD: remove,
     CONGRAT_CMD: birthday,
-    NOTES_CMD: start_notes
+    NOTES_CMD: start_notes,
 }
 
 
@@ -875,7 +938,6 @@ def main():
     while True:
         line = input(">> ").lower()
         if line in exit_list:
-            
             print(">> Good bye!")
 
             if len(contact_book) != 0:
@@ -901,13 +963,14 @@ def start():
     # print(os.getcwd())
     contact_book = AddressBook()  # address book of contacts
 
-    if (os.path.exists(ADRESSBOOK)):
+    if os.path.exists(ADRESSBOOK):
         contact_book = contact_book.read_from_file(ADRESSBOOK)
         print(colored(">> address book was succesfully read", "yellow"))
         # contact_book.print()
     else:
         out_address_book_not = colored(
-            f">> address book {ADRESSBOOK} was not found", "red")
+            f">> address book {ADRESSBOOK} was not found", "red"
+        )
         print(out_address_book_not)
 
     main()
@@ -917,6 +980,7 @@ def start():
     #     out_address_book = colored(ADRESSBOOK, "red")
     #     print(out_save + out_address_book)
     #     contact_book.save_to_file(ADRESSBOOK)
+
 
 # print(check_phone("+386478617006"))
 # print(check_name("+1(647)861 wrwf"))
@@ -929,9 +993,4 @@ def start():
 # print(handler(command_line))
 # wait()
 if __name__ == "__main__":
-
     start()
-
-    
-   
-
